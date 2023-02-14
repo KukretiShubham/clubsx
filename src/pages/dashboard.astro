@@ -1,0 +1,23 @@
+---
+import Layout from '@layouts/Landing.astro'
+import Dashboard from '@components/Dashboard/Dashboard.svelte'
+import WithFrapper from '@components/Dashboard/WithFrapper.svelte'
+
+---
+
+<script>
+  const fetchUserClubs = async () => {
+    const res = await fetch('/api/stats')
+    return res
+  }
+  const res = await fetchUserClubs()
+  console.log("result = > ", await res.body)
+</script>
+<Layout>
+  <div class="relative justify-center">
+    <div class="">
+      <Dashboard client:only />
+      <WithFrapper client:only />
+    </div>
+  </div>
+</Layout>
