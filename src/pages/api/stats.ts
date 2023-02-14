@@ -1,4 +1,5 @@
 import { createClient } from 'redis'
+import { decode } from '@devprotocol/clubs-core'
 
 export const post = async () => {
   const client = createClient({
@@ -11,16 +12,18 @@ export const post = async () => {
     },
   })
   await client.connect()
-  
+
   client.on('error', (e) => {
     console.error('redis connection error: ', e)
   })
-  const keys = await client.keys('*');
-  const data = [];
-  
+  const keys = await client.keys('*')
+  const data = []
+
   for (const key of keys) {
-    data.push({ [key]: await client.get(key) });
+    const config = await client.get(key)
+    if (!config) continue
+    data.push({ [key]: config })
   }
+  await client.disconnect()
   return new Response(JSON.stringify(data), { status: 200 })
 }
-
