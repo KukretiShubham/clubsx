@@ -1,5 +1,4 @@
 import { createClient } from 'redis'
-import { decode } from '@devprotocol/clubs-core'
 
 export const post = async () => {
   const client = createClient({
