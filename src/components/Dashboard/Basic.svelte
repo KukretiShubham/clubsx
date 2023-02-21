@@ -23,13 +23,13 @@
       const isDraft = decoded.options?.find(
         (option: { key: string }) => option.key === '__draft'
       ) as DraftOptions | undefined
-      console.log("before decoded = >", club)
-      console.log("decoded = >", decoded)
+      console.log('before decoded = >', club)
+      console.log('decoded = >', decoded)
 
       if (isDraft?.value.isInDraft) {
         draftClubs.push(decoded)
         draftClubs = draftClubs
-      } else {  
+      } else {
         publishedClubs.push(decoded)
         publishedClubs = publishedClubs
       }
@@ -51,5 +51,4 @@
   <div>
     Total Clubs Draft: {draftClubs.length}
   </div>
-
 </div>
