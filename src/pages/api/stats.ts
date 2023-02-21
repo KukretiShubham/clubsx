@@ -15,7 +15,7 @@ export const post = async () => {
   client.on('error', (e) => {
     console.error('redis connection error: ', e)
   })
-  const keys = await client.keys('*')
+  const keys = (await client.keys('*')).filter((key) => !key.startsWith('id::'))
   const data = []
 
   for (const key of keys) {

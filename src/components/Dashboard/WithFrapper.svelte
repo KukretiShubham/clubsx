@@ -8,8 +8,7 @@
         values: [10, 12, 3, 9, 8, 15, 9],
       },
     ],
-    colors: ['red'],
   }
 </script>
 
-<Chart {data} type="bar" />
+<Chart {data} type="bar" colors="oragne" />

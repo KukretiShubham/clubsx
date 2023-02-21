@@ -3,6 +3,7 @@
   import { decode } from '@devprotocol/clubs-core'
   import type { DraftOptions } from '@constants/draft'
   import type { ClubsConfiguration } from '@devprotocol/clubs-core'
+  import Table from './Table.svelte'
 
   let isLoading = false
   let draftClubs: ClubsConfiguration[] = []
@@ -42,13 +43,23 @@
 </script>
 
 <div>
-  <div>
-    Total Clubs Created: {publishedClubs.length + draftClubs.length}
+  <div
+    class="max-w-sm rounded-lg border border-gray-200 bg-white p-6 shadow dark:border-gray-700 dark:bg-gray-800"
+  >
+    <h5
+      class="mb-2 text-2xl font-semibold tracking-tight text-gray-900 dark:text-white"
+    >
+      Overview
+    </h5>
+    <p class="text-gray-600 dark:text-gray-400">
+      Total Clubs Created: {publishedClubs.length + draftClubs.length}
+    </p>
+    <p class="text-gray-600 dark:text-gray-400">
+      Published: {publishedClubs.length}
+    </p>
+    <p class="text-gray-600 dark:text-gray-400">
+      In Draft: {draftClubs.length}
+    </p>
   </div>
-  <div>
-    Total Clubs Published: {publishedClubs.length}
-  </div>
-  <div>
-    Total Clubs Draft: {draftClubs.length}
-  </div>
+  <Table config={[...draftClubs, ...publishedClubs]} />
 </div>
