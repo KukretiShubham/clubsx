@@ -21,7 +21,7 @@ export const post = async () => {
   for (const key of keys) {
     const config = await client.get(key)
     if (!config) continue
-    data.push({ [key]: config })
+    data.push(config)
   }
   await client.disconnect()
   return new Response(JSON.stringify(data), { status: 200 })

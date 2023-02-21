@@ -1,26 +1,55 @@
 <script lang="ts">
-    import { onMount } from 'svelte'
-    let clubsNumber:null | number = null
-    let latestClub: null[] | string[] = [null]
+  import { onMount } from 'svelte'
+  import { decode } from '@devprotocol/clubs-core'
+  import type { DraftOptions } from '@constants/draft'
+  import type { ClubsConfiguration } from '@devprotocol/clubs-core'
 
-    const fetchTotalClubs = async () => {
-    const res = await fetch('/api/stats', {
+  let isLoading = false
+  let draftClubs: ClubsConfiguration[] = []
+  let publishedClubs: ClubsConfiguration[] = []
+
+  const fetchTotalClubs = async () => {
+    const req = await fetch('/api/stats', {
       method: 'POST',
     })
-    return res.json()
+    if (req.status !== 200) {
+      isLoading = false
+      return
     }
-    onMount(async () => {
-        clubsNumber = await fetchTotalClubs().then((res) => res.length)
-        latestClub = await fetchTotalClubs().then((res) => res[res.length -1])
-    })
-    $: console.log('Latest = > ', latestClub);
-  </script>
-  
+
+    const clubs = await req.json()
+    for (const club of clubs) {
+      const decoded = decode(club)
+      const isDraft = decoded.options?.find(
+        (option: { key: string }) => option.key === '__draft'
+      ) as DraftOptions | undefined
+      console.log("before decoded = >", club)
+      console.log("decoded = >", decoded)
+
+      if (isDraft?.value.isInDraft) {
+        draftClubs.push(decoded)
+        draftClubs = draftClubs
+      } else {  
+        publishedClubs.push(decoded)
+        publishedClubs = publishedClubs
+      }
+    }
+    isLoading = false
+  }
+  onMount(async () => {
+    await fetchTotalClubs()
+  })
+</script>
+
+<div>
   <div>
-    <div>
-        Total clubs: {clubsNumber}
-    </div>
-    <div>
-        Latest club: {Object.keys(latestClub)}
-    </div>
+    Total Clubs Created: {publishedClubs.length + draftClubs.length}
   </div>
+  <div>
+    Total Clubs Published: {publishedClubs.length}
+  </div>
+  <div>
+    Total Clubs Draft: {draftClubs.length}
+  </div>
+
+</div>
