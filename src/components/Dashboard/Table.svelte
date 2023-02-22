@@ -1,19 +1,7 @@
 <script lang="ts">
   import type { ClubsConfiguration } from '@devprotocol/clubs-core'
-  import type { DraftOptions } from '@constants/draft'
 
   export let config: ClubsConfiguration[]
-  // const isDraft = config.options?.find(
-  //     (option) => option.key === '__draft'
-  //   ) as DraftOptions | undefined
-
-  // const status = isDraft?.value.isInDraft ? 'Draft' : 'Published'
-  // const imagePath =
-  //   (config.options?.find((option) => option.key === 'avatarImgSrc')
-  //     ?.value as string) ?? ''
-
-  // const path = `https://${config.name}.clubs.place`
-  // const blockchain = config.chainId === 1 ? 'Ethereum' : config.chainId === 137 ? 'Polygon' : config.chainId === 4 ? 'Rinkeby' : config.chainId === 80001 ? 'Mumbai' : 'Unknown'
 </script>
 
 <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
