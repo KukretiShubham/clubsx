@@ -176,6 +176,8 @@ export let collection: Collection
                         currency={mem.currency}
                         description={mem.description}
                         className={`lg:row-start-3 ${getColStart(i)}`}
+                        action={`/join/${mem.id}`}
+                        actionLabel={'Purchase'}
                     />
                 {/each}
             </div>
