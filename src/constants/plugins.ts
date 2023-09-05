@@ -9,7 +9,7 @@ import Feeds from '@assets/Plugins/Feeds.svg'
 import $1 from '@plugins/default-theme'
 import $2 from '@plugins/buy'
 import $3 from '@plugins/community'
-import $4 from '@plugins/fiat'
+import $4 from '@plugins/pay-by-card'
 import $5 from '@plugins/home'
 import $6 from '@plugins/join'
 import $7 from '@plugins/me'
@@ -62,16 +62,15 @@ export type InstallablePlugins = {
   repositoryUrl?: string
   pluginOptions: ClubsPluginOptions
   planned?: ClubsFunctionPlugin
+  require?: {
+    invitation?: boolean
+  }
 }
 
-export type PluginMeta = (ClubsPluginMeta & Partial<ClubsThemePluginMeta>) & {
-  added: boolean
-  tag: PluginTag
-  developer?: string
-  repositoryUrl?: string
-  clubsUrl?: string
-  planned: boolean
-}
+export type PluginMeta = (ClubsPluginMeta & Partial<ClubsThemePluginMeta>) &
+  InstallablePlugins & {
+    added: boolean
+  }
 
 export type ExternalTool = {
   name: string
@@ -81,6 +80,23 @@ export type ExternalTool = {
 }
 
 export const installablePlugins: InstallablePlugins[] = [
+  {
+    id: $4.meta.id,
+    tag: 'New & Upcoming',
+    developer: 'Dev Protocol',
+    repositoryUrl: 'https://github.com/dev-protocol/clubsx',
+    pluginOptions: [],
+  },
+  {
+    id: $17.meta.id,
+    tag: 'New & Upcoming',
+    developer: 'Dev Protocol',
+    repositoryUrl: 'https://github.com/dev-protocol/clubsx',
+    pluginOptions: [],
+    require: {
+      invitation: true,
+    },
+  },
   {
     id: $14.meta.id,
     tag: 'New & Upcoming',

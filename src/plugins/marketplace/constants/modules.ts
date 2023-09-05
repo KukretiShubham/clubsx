@@ -8,5 +8,7 @@ export const modules = {
   'devprotocol:clubs:gated-contact-form': () => import('@plugins/message'),
   'devprotocol:clubs:plugin:quests': () => import('@plugins/quests'),
   'clubs-plugin-links': () => import('@kazu80/clubs-plugin-links'),
+  'devprotocol:clubs:plugin:tickets': () => import('@plugins/tickets'),
+  'devprotocol:clubs:plugin:pay-by-card': () => import('@plugins/pay-by-card'),
   'devprotocol:clubs:collections': () => import('@plugins/collections'),
 }
