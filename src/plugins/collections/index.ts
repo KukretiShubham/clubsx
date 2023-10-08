@@ -31,7 +31,6 @@ export type CollectionMembership = Membership & {
   memberCount?: number
 }
 
-
 export type Collection = {
   id: string
   name: string
@@ -106,7 +105,6 @@ export const getAdminPaths: ClubsFunctionGetAdminPaths = async (
   { name, rpcUrl, propertyAddress },
   { getPluginConfigById },
 ) => {
-
   const [existingMembershipsConfig] = getPluginConfigById(
     'devprotocol:clubs:simple-memberships',
   )
@@ -136,12 +134,13 @@ export const getAdminPaths: ClubsFunctionGetAdminPaths = async (
     memberships: [],
   }
 
-  const existingMemberships = (existingMembershipsConfig?.options.find(
-    (opt: ClubsPluginOption) => opt.key === 'memberships',
-  )?.value as UndefinedOr<Membership[]>) ?? []
+  const existingMemberships =
+    (existingMembershipsConfig?.options.find(
+      (opt: ClubsPluginOption) => opt.key === 'memberships',
+    )?.value as UndefinedOr<Membership[]>) ?? []
 
   console.log('existingMemberships', existingMemberships)
-  
+
   const collections =
     (collectionsConfig?.options.find(
       (opt: ClubsPluginOption) => opt.key === 'collections',
@@ -156,7 +155,14 @@ export const getAdminPaths: ClubsFunctionGetAdminPaths = async (
     ...(collections.map((collection) => ({
       paths: ['collections', collection.id],
       component: AdminEdit,
-      props: { collection, collections, existingMemberships, name, rpcUrl, propertyAddress },
+      props: {
+        collection,
+        collections,
+        existingMemberships,
+        name,
+        rpcUrl,
+        propertyAddress,
+      },
     })) ?? []),
     ...(collections.flatMap((collection) =>
       collection.memberships.map((membership) => ({
