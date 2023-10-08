@@ -31,6 +31,7 @@ export type CollectionMembership = Membership & {
   memberCount?: number
 }
 
+
 export type Collection = {
   id: string
   name: string
@@ -40,6 +41,7 @@ export type Collection = {
   endTime?: number
   description: string
   memberships: CollectionMembership[]
+  requiredMemberships?: string[]
 }
 
 export const getSlots: ClubsFunctionGetSlots = async (
@@ -104,6 +106,11 @@ export const getAdminPaths: ClubsFunctionGetAdminPaths = async (
   { name, rpcUrl, propertyAddress },
   { getPluginConfigById },
 ) => {
+
+  const [existingMembershipsConfig] = getPluginConfigById(
+    'devprotocol:clubs:simple-memberships',
+  )
+
   const [collectionsConfig] = getPluginConfigById(
     'devprotocol:clubs:collections',
   )
@@ -129,6 +136,12 @@ export const getAdminPaths: ClubsFunctionGetAdminPaths = async (
     memberships: [],
   }
 
+  const existingMemberships = (existingMembershipsConfig?.options.find(
+    (opt: ClubsPluginOption) => opt.key === 'memberships',
+  )?.value as UndefinedOr<Membership[]>) ?? []
+
+  console.log('existingMemberships', existingMemberships)
+  
   const collections =
     (collectionsConfig?.options.find(
       (opt: ClubsPluginOption) => opt.key === 'collections',
@@ -143,13 +156,13 @@ export const getAdminPaths: ClubsFunctionGetAdminPaths = async (
     ...(collections.map((collection) => ({
       paths: ['collections', collection.id],
       component: AdminEdit,
-      props: { collection, collections, name, rpcUrl, propertyAddress },
+      props: { collection, collections, existingMemberships, name, rpcUrl, propertyAddress },
     })) ?? []),
     ...(collections.flatMap((collection) =>
       collection.memberships.map((membership) => ({
         paths: ['collections', collection.id, membership.id],
         component: AdminEditMembership,
-        props: { collections, collection, membership },
+        props: { collections, collection, existingMemberships, membership },
       })),
     ) ?? []),
     {
@@ -159,6 +172,7 @@ export const getAdminPaths: ClubsFunctionGetAdminPaths = async (
         isTimeLimitedCollection: false,
         preset: presetMemberCollection,
         collections,
+        existingMemberships,
         rpcUrl,
         propertyAddress,
         name,
@@ -171,6 +185,7 @@ export const getAdminPaths: ClubsFunctionGetAdminPaths = async (
         isTimeLimitedCollection: true,
         preset: presetTimeCollection,
         collections,
+        existingMemberships,
         rpcUrl,
         propertyAddress,
         name,

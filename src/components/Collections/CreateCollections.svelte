@@ -2,6 +2,7 @@
   import { ClubsEvents, setOptions } from '@devprotocol/clubs-core'
   import { buildConfig, controlModal } from '@devprotocol/clubs-core/events'
   import type { Collection, CollectionMembership } from '@plugins/collections'
+  import type { Membership } from '@plugins/memberships'
   import MembershipOption from '@components/AdminMembershipsForm/MembershipOption.svelte'
   import { uploadImageAndGetPath } from '@fixtures/imgur'
   import {
@@ -21,9 +22,9 @@
   import { tokenInfo } from '@constants/common'
   import { bytes32Hex } from '@fixtures/data/hexlify'
 
-
   export let existingCollections: Collection[] = []
   export let collection: Collection
+  export let existingMemberships: Membership[] = []
   export let isTimeLimitedCollection: boolean = false
   export let clubName: string | undefined = undefined
   export let isAdding: boolean = false
@@ -869,36 +870,18 @@
         </div>
       </div>
       <div class="grid grid-cols-3 justify-between gap-4 pt-2.5">
+        {#each existingMemberships as mem, i}
         <MembershipOption
-          clubName={'Your Club'}
-          id={'1'}
-          name={'Membership Name'}
-          imagePath={'https://i.ibb.co/hLD6byP/1.jpg'}
-          currency={'USDC'}
-          price={"100"}
-          description={'Membership Description'}
-          className={`lg:row-start-3 ${getColStart(0)}`}
+          clubName={clubName ?? 'Your Club'}
+          id={mem.id}
+          name={mem.name}
+          imagePath={mem.imageSrc.trim().length > 0 ? mem.imageSrc : emptyDummyImage(400, 400)}
+          price={mem.price.toString()}
+          currency={mem.currency}
+          description={mem.description}
+          className={`lg:row-start-3 ${getColStart(i)}`}
         />
-        <MembershipOption
-          clubName={'Your Club'}
-          id={'2'}
-          name={'Membership Name'}
-          imagePath={'https://i.ibb.co/Kyjr50C/Image.png'}
-          currency={'ETH'}
-          price={"0.1"}
-          description={'Membership Description'}
-          className={`lg:row-start-3 ${getColStart(1)}`}
-        />
-        <MembershipOption
-          clubName={'Your Club'}
-          id={'3'}
-          name={'Membership Name'}
-          imagePath={'https://i.ibb.co/nrdKDQy/Image-1.png'}
-          currency={'DEV'}
-          price={"0.1"}
-          description={'Membership Description'}
-          className={`lg:row-start-3 ${getColStart(2)}`}
-        />
+        {/each}
       </div>
     </div>
 
