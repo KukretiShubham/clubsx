@@ -27,10 +27,10 @@ export let collection: Collection
 export let propertyAddress: string
 export let rpcUrl: string
 
-const slots: SlotLeft = {
-  left: 20,
-  total: 50,
-}
+// const slots: SlotLeft = {
+//   left: 20,
+//   total: 50,
+// }
 
 let currentAddress: string | undefined
 
@@ -85,18 +85,19 @@ let currentAddress: string | undefined
     }
   }
 
-  // const getSlotsForMembership = async (membership: CollectionMembership) => {
-  //   const provider = new JsonRpcProvider(rpcUrl)
-  //   const left = await callSlotCollections(
-  //     provider,
-  //     'getSlotsLeft',
-  //     false,
-  //     [propertyAddress, bytes32Hex(membership.payload)],
-  //   )
-  //   const total = membership.memberCount
-  //   console.log({ left, total })
-  //   return {left, total} as SlotLeft
-  // }
+  const getSlotsForMembership = async (membership: CollectionMembership) => {
+    const provider = new JsonRpcProvider(rpcUrl)
+    let left = await callSlotCollections(
+      provider,
+      'getSlotsLeft',
+      false,
+      [propertyAddress, bytes32Hex(membership.payload)],
+    )
+    left = Number(left)
+    const total = membership.memberCount
+    console.log({ left, total })
+    return {left, total} as SlotLeft
+  }
 
   onMount(async () => {
     calculateTimeLeft();
@@ -245,21 +246,37 @@ let currentAddress: string | undefined
             class="grid grid-cols-[repeat(auto-fit,_minmax(120px,_1fr))] justify-between gap-4"
           >
             {#each collection.memberships as mem, i}
-            
             {#if validationResult === true}
-              <MembershipOption
-                clubName={clubName ?? 'Your Club'}
-                id={mem.id}
-                name={mem.name}
-                imagePath={mem.imageSrc}
-                price={mem.price.toString()}
-                currency={mem.currency}
-                description={mem.description}
-                action={`/collections/checkout/${bytes32Hex(mem.payload)}`}
-                actionLabel="Purchase"
-                slotOutTotal={slots}
-              />
+              {#if !collection.isTimeLimitedCollection}
+                {#await getSlotsForMembership(mem) then slots}
+                  <MembershipOption
+                    clubName={clubName ?? 'Your Club'}
+                    id={mem.id}
+                    name={mem.name}
+                    imagePath={mem.imageSrc}
+                    price={mem.price.toString()}
+                    currency={mem.currency}
+                    description={mem.description}
+                    action={`/collections/checkout/${bytes32Hex(mem.payload)}`}
+                    actionLabel="Purchase"
+                    slotOutTotal={slots}
+                  />
+                {/await}
+              {:else}
+                <MembershipOption
+                  clubName={clubName ?? 'Your Club'}
+                  id={mem.id}
+                  name={mem.name}
+                  imagePath={mem.imageSrc}
+                  price={mem.price.toString()}
+                  currency={mem.currency}
+                  description={mem.description}
+                  action={`/collections/checkout/${bytes32Hex(mem.payload)}`}
+                  actionLabel="Purchase"
+                  slotOutTotal={undefined}
+                />
               {/if}
+            {/if}
             {/each}
           </div>
         </div>
