@@ -23,7 +23,7 @@
     source: CollectionMembership
     state: State
     payload: string
-    isTimeLimitedCollection: boolean
+    isTimeLimitedCollection: boolean | 'both'
     customDescriptor: {
       set: Promise<boolean>
     }
@@ -36,12 +36,13 @@
   export let rpcUrl: string
   export let customTimeDescriptorAddress: string | undefined
   export let customMemberDescriptorAddress: string | undefined
+  export let customMixSlotDescriptorAddress: string | undefined
   export let expected: ExpectedStatus[]
   export let stateFetcher: (opts: {
     provider: ContractRunner
     propertyAddress: string
     payload: string
-    isTimeLimitedCollection: boolean
+    isTimeLimitedCollection: boolean | 'both'
   }) => Promise<Record<string, any>>
   export let stateSetter: (opts: {
     provider: Signer
@@ -64,12 +65,22 @@
     const descriptor = await whenDefined(sTokensManager, (cont) =>
       cont.descriptorOfPropertyByPayload(propertyAddress, data.payload),
     )
-    const customDescriptorAddres = data.isTimeLimitedCollection
-      ? customTimeDescriptorAddress
-      : customMemberDescriptorAddress
+
+    let customDescriptorAddress
+    switch (data.isTimeLimitedCollection) {
+      case true:
+        customDescriptorAddress = customTimeDescriptorAddress
+        break
+      case false:
+        customDescriptorAddress = customMemberDescriptorAddress
+        break
+      case 'both':
+        customDescriptorAddress = customMixSlotDescriptorAddress
+        break
+    }
     const test =
-      descriptor?.toLowerCase() === customDescriptorAddres?.toLowerCase()
-    console.log({ test, descriptor, customDescriptorAddres })
+      descriptor?.toLowerCase() === customDescriptorAddress?.toLowerCase()
+    console.log({ test, descriptor, customDescriptorAddress })
     return test
   }
 
@@ -159,6 +170,9 @@
     const memberItems = items.filter(
       ({ isTimeLimitedCollection }) => !isTimeLimitedCollection,
     )
+    const mixSlotItems = items.filter(
+      ({ isTimeLimitedCollection }) => isTimeLimitedCollection === 'both',
+    )
 
     // Filter out states with empty payload
     const validTimeStates = timeItems.filter(
@@ -167,8 +181,12 @@
     const validMemberStates = memberItems.filter(
       ({ payload }) => payload.trim() !== '',
     )
+    const validMixSlotStates = mixSlotItems.filter(
+      ({ payload }) => payload.trim() !== '',
+    )
     let resTime
     let resMem
+    let resMixSlot
     if (validTimeStates.length > 0) {
       resTime =
         (await whenDefinedAll(
@@ -204,6 +222,25 @@
         res_.wait().catch((err) => new Error(err)),
       )
       syncStatusDescriptor = resultMem instanceof Error ? resultMem : false
+    }
+    if (validMixSlotStates.length > 0) {
+      resMixSlot =
+        (await whenDefinedAll(
+          [sTokensManager, customMixSlotDescriptorAddress],
+          ([cont, descriptor]) =>
+            cont
+              .setTokenURIDescriptor(
+                propertyAddress,
+                descriptor,
+                mixSlotItems.map(({ payload }) => payload),
+              )
+              .catch((err) => new Error(err)),
+        )) ?? new Error('Client error: try it again!')
+      const resultMixSlot = await whenNotError(resMixSlot, (res_) =>
+        res_.wait().catch((err) => new Error(err)),
+      )
+      syncStatusDescriptor =
+        resultMixSlot instanceof Error ? resultMixSlot : false
     }
     initStatuses()
   }
@@ -250,7 +287,7 @@
     Memberships just created are not yet published on the blockchain. Submit all
     transactions to start offering memberships.
   </p>
-  <div class="max-h-96 overflow-y-auto rounded-md">
+  <div class="relative max-h-96 overflow-y-auto rounded-md">
     <table
       class="w-full max-w-5xl border-separate overflow-x-auto rounded-md border border-dp-blue-grey-200"
     >
@@ -265,7 +302,9 @@
               </span>
             {:then value}
               <button
-                class="hs-button is-outlined is-small"
+                class={`hs-button is-small ${
+                  value.length > 0 ? 'is-filled is-plox' : 'is-outlined'
+                }`}
                 disabled={value.length < 1}
                 on:click={onClickSyncDescriptor}
                 >{value.length > 0 ? 'Send' : 'Completed'}</button
@@ -303,7 +342,9 @@
               </span>
             {:then value}
               <button
-                class="hs-button is-outlined is-small"
+                class={`hs-button is-small ${
+                  value.length > 0 ? 'is-filled is-plox' : 'is-outlined'
+                }`}
                 disabled={value.length < 1}
                 on:click={onClickSyncImages}
                 >{value.length > 0 ? 'Send' : 'Completed'}</button
@@ -365,7 +406,7 @@
                       d="M4.5 12.75l6 6 9-13.5"
                     />
                   </svg>
-                {:else}<span class="text-sm text-dp-red-300">●</span
+                {:else}<span class="text-sm text-plox-300">●</span
                   >{/if}{/await}</td
             >
             <td class="flex items-center justify-center p-2"
@@ -386,12 +427,23 @@
                       d="M4.5 12.75l6 6 9-13.5"
                     />
                   </svg>
-                {:else}<span class="text-sm text-dp-red-300">●</span
+                {:else}<span class="text-sm text-plox-300">●</span
                   >{/if}{/await}</td
             >
           </tr>
         {/each}
       </tbody>
     </table>
+    {#await Promise.all([listOfoutOfSyncDescriptors, listOfoutOfSyncImages])}
+      <div
+        role="presentation"
+        class="absolute inset-0 flex flex-col gap-5 justify-center justify-items-center items-center bg-[#222b3d80] backdrop-blur-sm"
+      >
+        <div
+          class="h-40 w-40 animate-spin rounded-full border-4 border-l border-r border-t border-native-blue-300"
+        />
+        <p class="font-bold">⌛ Loading memberships</p>
+      </div>
+    {/await}
   </div>
 </section>

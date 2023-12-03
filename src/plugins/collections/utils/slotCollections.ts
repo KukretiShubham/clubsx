@@ -1,4 +1,3 @@
-import type { BaseProvider } from '@ethersproject/providers'
 import { ethers } from 'ethers'
 import type {
   ContractRunner,
@@ -8,13 +7,13 @@ import type {
   Signer,
   Provider,
 } from 'ethers'
-import { timeABI } from './timeABI'
-import { memberABI } from './memberABI'
-import type { Image } from './types/setImageArg'
+import { mixSlotABI } from './mixSlotABI'
+import type { Image, MixImage } from './types/setImageArg'
 
 type AddressList = {
   timeSlot: string
   memberSlot: string
+  mixSlot: string
 }
 
 type Address = {
@@ -28,6 +27,7 @@ export const address: Address[] = [
     addressList: {
       timeSlot: '0x0000000000000000000000000000000000000000',
       memberSlot: '0x0000000000000000000000000000000000000000',
+      mixSlot: '0x0000000000000000000000000000000000000000',
     },
   },
   {
@@ -35,6 +35,7 @@ export const address: Address[] = [
     addressList: {
       timeSlot: '0x0000000000000000000000000000000000000000',
       memberSlot: '0x0000000000000000000000000000000000000000',
+      mixSlot: '0x0000000000000000000000000000000000000000',
     },
   },
   {
@@ -42,6 +43,7 @@ export const address: Address[] = [
     addressList: {
       timeSlot: '0x0000000000000000000000000000000000000000',
       memberSlot: '0x0000000000000000000000000000000000000000',
+      mixSlot: '0x0000000000000000000000000000000000000000',
     },
   },
   {
@@ -49,6 +51,7 @@ export const address: Address[] = [
     addressList: {
       timeSlot: '0x0000000000000000000000000000000000000000',
       memberSlot: '0x0000000000000000000000000000000000000000',
+      mixSlot: '0x0000000000000000000000000000000000000000',
     },
   },
   {
@@ -56,6 +59,7 @@ export const address: Address[] = [
     addressList: {
       timeSlot: '0x0000000000000000000000000000000000000000',
       memberSlot: '0x0000000000000000000000000000000000000000',
+      mixSlot: '0x0000000000000000000000000000000000000000',
     },
   },
   {
@@ -63,6 +67,7 @@ export const address: Address[] = [
     addressList: {
       timeSlot: '0xbE0AFf1B1AA447772e742CC23A96984399235427',
       memberSlot: '0x955AAd5D0DEde7C651f6f35d8024340EB89cF5a6',
+      mixSlot: '0x66E0400432A7A910f529694Dd4E871dEaf90B1C1',
     },
   },
 ]
@@ -72,41 +77,37 @@ const defaultAddress: Address = {
   addressList: {
     timeSlot: '0x0000000000000000000000000000000000000000',
     memberSlot: '0x0000000000000000000000000000000000000000',
+    mixSlot: '0x0000000000000000000000000000000000000000',
   },
 }
 
 export async function callSlotCollections(
   provider: BrowserProvider | ContractRunner,
   functionName: 'getSlotsLeft',
-  isTimeSlot: boolean,
   args: [propertyAddress: string, key: string],
 ): Promise<number>
 
 export async function callSlotCollections(
   provider: BrowserProvider | ContractRunner,
   functionName: 'propertyImages',
-  isTimeSlot: boolean,
   args: [propertyAddress: string, key: string],
 ): Promise<Image>
 
 export async function callSlotCollections(
   provider: Signer | ContractRunner | BrowserProvider,
   functionName: 'setImages',
-  isTimeSlot: boolean,
-  args: [propertyAddress: string, images: Image[], keys: string[]],
+  args: [propertyAddress: string, images: Image[] | MixImage[], keys: string[]],
 ): Promise<TransactionResponse>
 
 export async function callSlotCollections(
   provider: Signer,
   functionName: 'removeImage',
-  isTimeSlot: boolean,
   args: [propertyAddress: string, key: string],
 ): Promise<TransactionResponse>
 
 export async function callSlotCollections(
   provider: Signer | ContractRunner | BrowserProvider,
   functionName: string,
-  isTimeSlot: boolean,
   args: unknown[],
 ): Promise<unknown> {
   const chainId = await ('getNetwork' in provider
@@ -120,11 +121,10 @@ export async function callSlotCollections(
     address.find((address) => address.chainId === chainId)?.addressList ||
     defaultAddress.addressList
 
-  const contract = new ethers.Contract(
-    isTimeSlot ? addressList.timeSlot : addressList.memberSlot,
-    isTimeSlot ? timeABI : memberABI,
-    provider,
-  )
+  const contractAddress = addressList.mixSlot
+  const contractABI = mixSlotABI
+
+  const contract = new ethers.Contract(contractAddress, contractABI, provider)
 
   const result: TransactionReceipt = await contract[functionName](...args)
   return result
