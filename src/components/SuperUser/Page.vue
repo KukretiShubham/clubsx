@@ -117,7 +117,7 @@ const onResetMaxRedemptions = resetMaxRedemptions(achievement)
 
 onMounted(async () => {
   if (!passportItem?.value?.payload) {
-    passportItem.value.payload = bytes32Hex(randomBytes(8))
+    passportItem.value.payload = randomBytes(8)
   }
 
   const { connection } = await import('@devprotocol/clubs-core/connection')
@@ -312,7 +312,7 @@ onMounted(async () => {
             type="text"
             disabled="true"
             class="hs-form-field__input"
-            :value="passportItem.payload"
+            :value="bytes32Hex(passportItem.payload ?? '')"
           />
         </label>
       </div>
