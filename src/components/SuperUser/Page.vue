@@ -226,7 +226,7 @@ onMounted(async () => {
       </div>
 
       <h2 class="font-mono text-xl mt-8">Add Passport Item</h2>
-      <div class="grid gap-2">
+      <div class="grid gap-2 mb-20">
         <label class="hs-form-field">
           <span class="hs-form-field__label">sToken name: </span>
           <input
@@ -315,6 +315,13 @@ onMounted(async () => {
             :value="bytes32Hex(passportItem.payload ?? '')"
           />
         </label>
+
+        <button
+          class="hs-button is-outlined is-small"
+          @click="onResetMaxRedemptions"
+        >
+          Set in config
+        </button>
       </div>
     </div>
 
