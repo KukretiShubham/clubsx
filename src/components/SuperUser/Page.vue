@@ -6,6 +6,9 @@ import { combineLatest } from 'rxjs'
 import { onMounted, ref } from 'vue'
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
+import type { ClubsConfiguration } from '@devprotocol/clubs-core'
+import type { Membership } from '@plugins/memberships'
+import type { CreatePassportItemReq } from '@devprotocol/clubs-plugin-passport'
 import type { ReqBodyAchievement } from '@plugins/achievements/handlers/addAchievement'
 import {
   callAddAchievement,
@@ -18,6 +21,8 @@ import {
   resetRecipients,
 } from './utils/achievements'
 import type { RefApiCalling } from './utils'
+import { randomBytes } from 'ethers'
+import { bytes32Hex } from '@devprotocol/clubs-core'
 
 dayjs.extend(utc)
 
@@ -38,13 +43,18 @@ const plugins = ref(
     willUninstall: false,
   })),
 )
+
 const achievement = ref<Partial<ReqBodyAchievement['achievement']>>({})
+const passportItem = ref<
+  Partial<Membership & CreatePassportItemReq['passportItem']>
+>({})
 
 const sign = async () => {
   const msg = message()
   const sig = await signerObj?.signMessage(msg)
   return { signature: sig, message: msg }
 }
+
 const fetchClubs = async (
   site: string,
 ): Promise<{ content: string | null; message: string }> =>
@@ -106,6 +116,10 @@ const onResetRecipients = resetRecipients(achievement)
 const onResetMaxRedemptions = resetMaxRedemptions(achievement)
 
 onMounted(async () => {
+  if (!passportItem?.value?.payload) {
+    passportItem.value.payload = bytes32Hex(randomBytes(8))
+  }
+
   const { connection } = await import('@devprotocol/clubs-core/connection')
   combineLatest([connection().signer, connection().account]).subscribe(
     ([_signer, _account]) => {
@@ -115,6 +129,7 @@ onMounted(async () => {
   )
 })
 </script>
+
 <template>
   <div class="grid gap-8 grid-cols-2">
     <div class="grid gap-8 justify-start justify-items-start">
@@ -209,6 +224,98 @@ onMounted(async () => {
           />
         </label>
       </div>
+
+      <h2 class="font-mono text-xl mt-8">Add Passport Item</h2>
+      <div class="grid gap-2">
+        <label class="hs-form-field">
+          <span class="hs-form-field__label">sToken name: </span>
+          <input
+            type="text"
+            class="hs-form-field__input"
+            v-model="passportItem.name"
+          />
+        </label>
+
+        <label class="hs-form-field">
+          <span class="hs-form-field__label">sToken image URL: </span>
+          <input
+            type="text"
+            class="hs-form-field__input"
+            v-model="passportItem.imageSrc"
+          />
+        </label>
+
+        <label class="hs-form-field">
+          <span class="hs-form-field__label">sToken description: </span>
+          <input
+            type="text"
+            class="hs-form-field__input"
+            v-model="passportItem.description"
+          />
+        </label>
+
+        <label class="hs-form-field">
+          <span class="hs-form-field__label">Price: </span>
+          <input
+            type="number"
+            class="hs-form-field__input"
+            v-model="passportItem.price"
+          />
+        </label>
+
+        <label class="hs-form-field">
+          <span class="hs-form-field__label">Currency: </span>
+
+          <div class="flex flex-col gap-4 items-center justify-start">
+            <div class="w-full flex flex-row gap-2 items-center justify-start">
+              <input
+                type="radio"
+                value="USDC"
+                v-model="passportItem.currency"
+              />
+              <label for="USDC">USDC</label>
+            </div>
+
+            <div class="w-full flex flex-row gap-2 items-center justify-start">
+              <input
+                type="radio"
+                value="MATIC"
+                v-model="passportItem.currency"
+              />
+              <label for="MATIC">MATIC</label>
+            </div>
+
+            <div class="w-full flex flex-row gap-2 items-center justify-start">
+              <input type="radio" value="ETH" v-model="passportItem.currency" />
+              <label for="ETH">ETH</label>
+            </div>
+
+            <div class="w-full flex flex-row gap-2 items-center justify-start">
+              <input type="radio" value="DEV" v-model="passportItem.currency" />
+              <label for="DEV">DEV</label>
+            </div>
+          </div>
+        </label>
+
+        <label class="hs-form-field">
+          <span class="hs-form-field__label">Fee: </span>
+          <input
+            type="number"
+            class="hs-form-field__input"
+            v-model="passportItem.fee"
+          />
+        </label>
+
+        <label class="hs-form-field">
+          <span class="hs-form-field__label">sToken payload: </span>
+          <input
+            type="text"
+            disabled="true"
+            class="hs-form-field__input"
+            :value="passportItem.payload"
+          />
+        </label>
+      </div>
     </div>
 
     <aside class="grid gap-2">
@@ -227,6 +334,7 @@ onMounted(async () => {
               </button>
             </p>
           </dd>
+
           <dt class="font-bold">Add Achievement</dt>
           <dd>
             <pre class="text-sm">{{
