@@ -1,15 +1,32 @@
 <script lang="ts" setup>
-import { decode, encode } from '@devprotocol/clubs-core'
-import { whenDefined, type UndefinedOr } from '@devprotocol/util-ts'
-import type { Signer } from 'ethers'
-import { combineLatest } from 'rxjs'
-import { onMounted, ref } from 'vue'
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
-import type { ClubsConfiguration } from '@devprotocol/clubs-core'
+import { randomBytes, ZeroAddress } from 'ethers'
+import { combineLatest } from 'rxjs'
+import { onMounted, ref } from 'vue'
+import type { ContractRunner, Signer } from 'ethers'
+import { clientsSTokens } from '@devprotocol/dev-kit'
+import {
+  decode,
+  encode,
+  membershipToStruct,
+  type ClubsConfiguration,
+} from '@devprotocol/clubs-core'
+import {
+  whenDefined,
+  whenDefinedAll,
+  type UndefinedOr,
+} from '@devprotocol/util-ts'
+
+import type { RefApiCalling } from './utils'
+import { bytes32Hex } from '@devprotocol/clubs-core'
 import type { Membership } from '@plugins/memberships'
-import type { CreatePassportItemReq } from '@devprotocol/clubs-plugin-passport'
+import type { PassportItemIndexDoc } from '@pages/passport/types'
 import type { ReqBodyAchievement } from '@plugins/achievements/handlers/addAchievement'
+import {
+  address,
+  callSimpleCollections,
+} from '@plugins/memberships/utils/simpleCollections'
 import {
   callAddAchievement,
   changeMaxRedemptions,
@@ -20,21 +37,23 @@ import {
   resetMaxRedemptions,
   resetRecipients,
 } from './utils/achievements'
-import type { RefApiCalling } from './utils'
-import { randomBytes } from 'ethers'
-import { bytes32Hex } from '@devprotocol/clubs-core'
 
 dayjs.extend(utc)
 
-let signerObj: UndefinedOr<Signer>
 const props = defineProps<{ plugins: { id: string; name: string }[] }>()
-const account = ref<string>()
+
+let chainId: UndefinedOr<number>
+let signerObj: UndefinedOr<Signer>
+let providerObj: UndefinedOr<ContractRunner>
+
 const club = ref<string>()
+const account = ref<string>()
 const message = () => `I'm a superuser @ts:${dayjs().utc().toDate().getTime()}`
 const apiCalling: RefApiCalling = ref<{
   result?: any
   error?: string
   progress?: boolean
+  status?: string
 }>()
 const plugins = ref(
   props.plugins.map((plg) => ({
@@ -43,11 +62,11 @@ const plugins = ref(
     willUninstall: false,
   })),
 )
-
 const achievement = ref<Partial<ReqBodyAchievement['achievement']>>({})
-const passportItem = ref<
-  Partial<Membership & CreatePassportItemReq['passportItem']>
->({})
+const passportItem = ref<{
+  membership: Partial<Membership>
+  item: Partial<PassportItemIndexDoc>
+}>({ membership: {}, item: {} })
 
 const sign = async () => {
   const msg = message()
@@ -107,6 +126,178 @@ const addAchievement = async () => {
   })
 }
 
+const setTokenURIDescriptor = async (
+  currentConfig: UndefinedOr<ClubsConfiguration>,
+) => {
+  if (!providerObj || !signerObj) {
+    return false
+  }
+
+  const [l1, l2] = await clientsSTokens(providerObj ?? signerObj)
+  const sTokensManager = l1 ?? l2
+  const customDescriptorAddress = address.find(
+    ({ chainId: chainId_ }) => chainId_ === chainId,
+  )?.address
+  return (
+    (await whenDefinedAll(
+      [
+        sTokensManager,
+        currentConfig,
+        customDescriptorAddress,
+        passportItem.value.membership.payload,
+      ],
+      ([cont, conf, descriptorAddress, payload]) =>
+        cont
+          .setTokenURIDescriptor(conf.propertyAddress, descriptorAddress, [
+            bytes32Hex(payload),
+          ])
+          .then((res) => res.wait())
+          .then((res) => res?.status)
+          .then((res) => (res ? true : false))
+          .catch((err: Error) => {
+            console.error('Error in setTokenURIDescriptor:', err)
+            return err
+          }),
+    )) ?? false
+  )
+}
+
+const setInConfig = async (currentConfig: UndefinedOr<ClubsConfiguration>) => {
+  const { signature: sig, message: msg } = await sign()
+  apiCalling.value = { progress: true, status: 'Setting value in config' }
+
+  const nextConfig = whenDefined(currentConfig, (base) => ({
+    ...base,
+    offerings: [
+      ...(base?.offerings?.filter(
+        (offering) =>
+          bytes32Hex(offering.payload) !==
+          bytes32Hex(passportItem.value.membership.payload ?? ''),
+      ) ?? []),
+      {
+        ...passportItem.value.membership,
+      } as Membership,
+    ],
+  }))
+
+  console.log({
+    currentConfig,
+    nextConfig,
+  })
+
+  // TODO: remove this to call the API.
+  const api = await whenDefined(nextConfig, (conf) =>
+    fetch('/api/superuser/config', {
+      method: 'POST',
+      body: JSON.stringify({
+        site: club.value,
+        message: msg,
+        signature: sig,
+        config: encode(conf),
+      }),
+    }),
+  )
+  const res = (await api?.json()) as { result: string; error?: string }
+  apiCalling.value = {
+    progress: false,
+    result: res.result,
+    error: res.error,
+    status: res.error ? '' : 'Set in config check it now',
+  }
+}
+
+const setImage = async (currentConfig: UndefinedOr<ClubsConfiguration>) => {
+  return (
+    (await whenDefinedAll(
+      [
+        callSimpleCollections,
+        currentConfig,
+        passportItem.value.membership.payload,
+        signerObj,
+      ],
+      ([func, conf, payload, signer]) =>
+        func(signer, 'setImages', [
+          conf.propertyAddress,
+          [
+            membershipToStruct(
+              {
+                ...passportItem.value.membership,
+              } as Membership,
+              chainId as number,
+            ),
+          ],
+          [bytes32Hex(payload)],
+        ])
+          .then((res) => res.wait())
+          .then((res) => res?.status)
+          .then((res) => (res ? true : false))
+          .catch((err: Error) => err),
+    )) ?? false
+  )
+}
+
+const deploySToken = async () => {
+  if (!providerObj || !signerObj) {
+    return
+  }
+
+  apiCalling.value = { progress: true, status: 'Started adding passport item' }
+
+  const currentConfig = whenDefined(
+    (await whenDefined(club.value, fetchClubs))?.content,
+    decode,
+  )
+
+  apiCalling.value = {
+    progress: true,
+    status: 'Started setting setTokenURIDescriptor for item',
+  }
+  const isDescriptorSet = await setTokenURIDescriptor(currentConfig)
+  if (!isDescriptorSet || isDescriptorSet instanceof Error) {
+    apiCalling.value = {
+      progress: true,
+      status: '',
+      error: 'Failed in setting setTokenURIDescriptor for item',
+    }
+
+    return
+  }
+
+  apiCalling.value = {
+    progress: true,
+    status: 'Started setting setImage for item',
+  }
+  const isImageSet = await setImage(currentConfig)
+  if (!isImageSet || isImageSet instanceof Error) {
+    apiCalling.value = {
+      progress: true,
+      status: '',
+      error: 'Failed in setting setImage for item',
+    }
+    return
+  }
+
+  await setInConfig(currentConfig)
+}
+
+const onChangeFeePercentage = async (ev: Event) => {
+  passportItem.value.membership.fee = {
+    beneficiary: (passportItem.value.membership.fee?.beneficiary ??
+      account ??
+      ZeroAddress) as string,
+    percentage: Number((ev.target as HTMLInputElement).value) ?? 10,
+  }
+}
+
+const onChangeBeneficiary = async (ev: Event) => {
+  passportItem.value.membership.fee = {
+    percentage: (passportItem.value.membership.fee?.percentage ?? 10) as number,
+    beneficiary: (String((ev.target as HTMLInputElement).value) ??
+      account ??
+      ZeroAddress) as string,
+  }
+}
+
 const onChangeMaxRedemptions = changeMaxRedemptions(achievement)
 const onChangeRecipients = changeRecipients(achievement)
 const onChangeName = changeMetaName(achievement)
@@ -116,17 +307,20 @@ const onResetRecipients = resetRecipients(achievement)
 const onResetMaxRedemptions = resetMaxRedemptions(achievement)
 
 onMounted(async () => {
-  if (!passportItem?.value?.payload) {
-    passportItem.value.payload = randomBytes(8)
-  }
+  passportItem.value.membership.payload = randomBytes(8)
 
   const { connection } = await import('@devprotocol/clubs-core/connection')
-  combineLatest([connection().signer, connection().account]).subscribe(
-    ([_signer, _account]) => {
-      signerObj = _signer
-      account.value = _account
-    },
-  )
+  combineLatest([
+    connection().signer,
+    connection().account,
+    connection().provider,
+    connection().chain,
+  ]).subscribe(([_signer, _account, _provider, _chain]) => {
+    signerObj = _signer
+    account.value = _account
+    providerObj = _provider
+    chainId = _chain
+  })
 })
 </script>
 
@@ -232,7 +426,7 @@ onMounted(async () => {
           <input
             type="text"
             class="hs-form-field__input"
-            v-model="passportItem.name"
+            v-model="passportItem.membership.name"
           />
         </label>
 
@@ -241,7 +435,7 @@ onMounted(async () => {
           <input
             type="text"
             class="hs-form-field__input"
-            v-model="passportItem.imageSrc"
+            v-model="passportItem.membership.imageSrc"
           />
         </label>
 
@@ -250,7 +444,7 @@ onMounted(async () => {
           <input
             type="text"
             class="hs-form-field__input"
-            v-model="passportItem.description"
+            v-model="passportItem.membership.description"
           />
         </label>
 
@@ -259,7 +453,7 @@ onMounted(async () => {
           <input
             type="number"
             class="hs-form-field__input"
-            v-model="passportItem.price"
+            v-model="passportItem.membership.price"
           />
         </label>
 
@@ -271,7 +465,7 @@ onMounted(async () => {
               <input
                 type="radio"
                 value="USDC"
-                v-model="passportItem.currency"
+                v-model="passportItem.membership.currency"
               />
               <label for="USDC">USDC</label>
             </div>
@@ -280,18 +474,26 @@ onMounted(async () => {
               <input
                 type="radio"
                 value="MATIC"
-                v-model="passportItem.currency"
+                v-model="passportItem.membership.currency"
               />
               <label for="MATIC">MATIC</label>
             </div>
 
             <div class="w-full flex flex-row gap-2 items-center justify-start">
-              <input type="radio" value="ETH" v-model="passportItem.currency" />
+              <input
+                type="radio"
+                value="ETH"
+                v-model="passportItem.membership.currency"
+              />
               <label for="ETH">ETH</label>
             </div>
 
             <div class="w-full flex flex-row gap-2 items-center justify-start">
-              <input type="radio" value="DEV" v-model="passportItem.currency" />
+              <input
+                type="radio"
+                value="DEV"
+                v-model="passportItem.membership.currency"
+              />
               <label for="DEV">DEV</label>
             </div>
           </div>
@@ -302,7 +504,20 @@ onMounted(async () => {
           <input
             type="number"
             class="hs-form-field__input"
-            v-model="passportItem.fee"
+            :value="passportItem.membership.fee?.percentage"
+            @change="onChangeFeePercentage"
+            placeholder="Enter value between 0 to 1"
+          />
+        </label>
+
+        <label class="hs-form-field">
+          <span class="hs-form-field__label">Beneficiary (Gateway): </span>
+          <input
+            type="text"
+            class="hs-form-field__input"
+            :value="passportItem.membership.fee?.beneficiary"
+            @change="onChangeBeneficiary"
+            placeholder="Enter wallet address"
           />
         </label>
 
@@ -312,15 +527,12 @@ onMounted(async () => {
             type="text"
             disabled="true"
             class="hs-form-field__input"
-            :value="bytes32Hex(passportItem.payload ?? '')"
+            :value="bytes32Hex(passportItem.membership.payload ?? '')"
           />
         </label>
 
-        <button
-          class="hs-button is-outlined is-small"
-          @click="onResetMaxRedemptions"
-        >
-          Set in config
+        <button class="hs-button is-outlined is-small" @click="deploySToken">
+          Deploy sToken
         </button>
       </div>
     </div>
@@ -351,6 +563,22 @@ onMounted(async () => {
               <button
                 class="hs-button is-small is-filled"
                 @click="addAchievement"
+              >
+                Add
+              </button>
+            </p>
+          </dd>
+
+          <dt class="font-bold">Add Passport Item</dt>
+          <dd>
+            <pre class="text-sm">{{
+              passportItem ? JSON.stringify(passportItem, null, 2) : ''
+            }}</pre>
+            <p>
+              <button
+                :disabled="!club"
+                class="hs-button is-small is-filled"
+                @click="deploySToken"
               >
                 Add
               </button>
