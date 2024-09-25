@@ -21,6 +21,6 @@ const plugins = [
 
 <Layout theme="light" connectButton="show" pageTitle="Superuser">
   <section class="container mx-auto max-w-screen-lg">
-    <Page client:load plugins={plugins} />
+    <Page client:only="vue" plugins={plugins} />
   </section>
 </Layout>

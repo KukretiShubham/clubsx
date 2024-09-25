@@ -162,8 +162,11 @@ const setTokenURIDescriptor = async (
   )
 }
 
-const setInConfig = async (currentConfig: UndefinedOr<ClubsConfiguration>) => {
-  const { signature: sig, message: msg } = await sign()
+const setInConfig = async (
+  currentConfig: UndefinedOr<ClubsConfiguration>,
+  sig: string | undefined,
+  msg: string,
+) => {
   apiCalling.value = { progress: true, status: 'Setting value in config' }
 
   const nextConfig = whenDefined(currentConfig, (base) => ({
@@ -277,7 +280,45 @@ const deploySToken = async () => {
     return
   }
 
-  await setInConfig(currentConfig)
+  const { signature: sig, message: msg } = await sign()
+  await setInConfig(currentConfig, sig, msg)
+  await setInPassportIndex(sig, msg)
+}
+
+const setInPassportIndex = async (sig: string | undefined, msg: string) => {
+  apiCalling.value = {
+    progress: true,
+    status: 'Setting value in passportindex',
+  }
+
+  const pluginId =
+    plugins.value.find((plgn) => plgn.name.toLowerCase() === 'passport')?.id ??
+    'devprotocol:clubs:plugin:passport'
+  const api = await whenDefined(pluginId, (conf) =>
+    fetch(
+      `${window.location.host.includes('clubs.place') ? 'https' : 'http'}://${club.value}.${window.location.host}/api/${pluginId}/passport/add`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          site: club.value,
+          message: msg,
+          signature: sig,
+          passportItem: {
+            itemAssetType: passportItem.value.item.itemAssetType,
+            itemAssetValue: passportItem.value.item.itemAssetValue,
+            sTokenPayload: bytes32Hex(passportItem.value.membership.payload),
+          },
+        }),
+      },
+    ),
+  )
+  const res = (await api?.json()) as { result: string; error?: string }
+  apiCalling.value = {
+    progress: false,
+    result: res.result,
+    error: res.error,
+    status: res.error ? '' : 'Set in config check it now',
+  }
 }
 
 const onChangeFeePercentage = async (ev: Event) => {
@@ -408,6 +449,7 @@ onMounted(async () => {
             @keyup="onChangeImage"
           />
         </label>
+
         <label class="hs-form-field">
           <span class="hs-form-field__label">Description</span>
           <input
@@ -531,9 +573,92 @@ onMounted(async () => {
           />
         </label>
 
-        <button class="hs-button is-outlined is-small" @click="deploySToken">
-          Deploy sToken
-        </button>
+        <label class="hs-form-field">
+          <span class="hs-form-field__label">Passport item asset value: </span>
+          <input
+            type="text"
+            class="hs-form-field__input"
+            v-model="passportItem.item.itemAssetValue"
+          />
+        </label>
+
+        <label class="hs-form-field">
+          <span class="hs-form-field__label">Passport item asset type: </span>
+
+          <div class="flex flex-col gap-4 items-center justify-start">
+            <div class="w-full flex flex-row gap-2 items-center justify-start">
+              <input
+                type="radio"
+                value="css"
+                v-model="passportItem.item.itemAssetType"
+              />
+              <label for="css">css</label>
+            </div>
+
+            <div class="w-full flex flex-row gap-2 items-center justify-start">
+              <input
+                type="radio"
+                value="stylesheet-link"
+                v-model="passportItem.item.itemAssetType"
+              />
+              <label for="stylesheet-link">stylesheet-link</label>
+            </div>
+
+            <div class="w-full flex flex-row gap-2 items-center justify-start">
+              <input
+                type="radio"
+                value="image"
+                v-model="passportItem.item.itemAssetType"
+              />
+              <label for="image">image</label>
+            </div>
+
+            <div class="w-full flex flex-row gap-2 items-center justify-start">
+              <input
+                type="radio"
+                value="image-link"
+                v-model="passportItem.item.itemAssetType"
+              />
+              <label for="image-link">image-link</label>
+            </div>
+
+            <div class="w-full flex flex-row gap-2 items-center justify-start">
+              <input
+                type="radio"
+                value="video"
+                v-model="passportItem.item.itemAssetType"
+              />
+              <label for="video">video</label>
+            </div>
+
+            <div class="w-full flex flex-row gap-2 items-center justify-start">
+              <input
+                type="radio"
+                value="video-link"
+                v-model="passportItem.item.itemAssetType"
+              />
+              <label for="video-link">video-link</label>
+            </div>
+
+            <div class="w-full flex flex-row gap-2 items-center justify-start">
+              <input
+                type="radio"
+                value="bgm"
+                v-model="passportItem.item.itemAssetType"
+              />
+              <label for="bgm">bgm</label>
+            </div>
+
+            <div class="w-full flex flex-row gap-2 items-center justify-start">
+              <input
+                type="radio"
+                value="bgm-link"
+                v-model="passportItem.item.itemAssetType"
+              />
+              <label for="bgm-link">bgm-link</label>
+            </div>
+          </div>
+        </label>
       </div>
     </div>
 
@@ -580,7 +705,7 @@ onMounted(async () => {
                 class="hs-button is-small is-filled"
                 @click="deploySToken"
               >
-                Add
+                Update onchain and add to db
               </button>
             </p>
           </dd>
