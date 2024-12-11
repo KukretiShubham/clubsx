@@ -5,88 +5,6 @@
 
   const ffmpegRef = new FFmpeg()
 
-  // async function getMimeCodec(videoChunk) {
-  //   // Load FFmpeg
-  //   if (!ffmpeg.isLoaded()) {
-  //     await ffmpeg.load();
-  //   }
-
-  //   // Write the video chunk to FFmpeg's virtual file system
-  //   ffmpeg.FS('writeFile', 'input_video', await fetchFile(videoChunk));
-
-  //   // Run FFprobe to get metadata
-  //   await ffmpeg.run('-i', 'input_video');
-
-  //   // Read the FFmpeg logs to extract codec information
-  //   const logs = ffmpeg.logs;
-  //   let containerFormat = '';
-  //   let videoCodec = '';
-  //   let audioCodec = '';
-
-  //   for (const log of logs) {
-  //     // Extract container format
-  //     if (!containerFormat) {
-  //       const formatMatch = log.message.match(/Input #0, (\w+),/);
-  //       if (formatMatch) {
-  //         containerFormat = formatMatch[1];
-  //       }
-  //     }
-
-  //     // Extract video codec
-  //     if (!videoCodec) {
-  //       const videoMatch = log.message.match(/Video: (\w+)/);
-  //       if (videoMatch) {
-  //         videoCodec = videoMatch[1];
-  //       }
-  //     }
-
-  //     // Extract audio codec
-  //     if (!audioCodec) {
-  //       const audioMatch = log.message.match(/Audio: (\w+)/);
-  //       if (audioMatch) {
-  //         audioCodec = audioMatch[1];
-  //       }
-  //     }
-
-  //     // Break the loop if all information is gathered
-  //     if (containerFormat && videoCodec && audioCodec) {
-  //       break;
-  //     }
-  //   }
-
-  //   // Map container format to MIME type
-  //   const mimeTypes = {
-  //     mov: 'video/quicktime',
-  //     mp4: 'video/mp4',
-  //     mkv: 'video/x-matroska',
-  //     avi: 'video/x-msvideo',
-  //     // Add more mappings as needed
-  //   };
-
-  //   const mimeType = mimeTypes[containerFormat] || 'application/octet-stream';
-
-  //   // Map codecs to MIME codecs
-  //   const codecMappings = {
-  //     h264: 'avc1.42E01E',
-  //     aac: 'mp4a.40.2',
-  //     // Add more mappings as needed
-  //   };
-
-  //   const videoCodecMime = codecMappings[videoCodec.toLowerCase()] || videoCodec;
-  //   const audioCodecMime = codecMappings[audioCodec.toLowerCase()] || audioCodec;
-
-  //   // Construct the MIME codec string
-  //   const mimeCodec = `${mimeType}; codecs="${videoCodecMime}, ${audioCodecMime}"`;
-
-  //   return mimeCodec;
-  // }
-
-  // // Usage example
-  // const videoChunk = 'path/to/video/chunk';
-  // getMimeCodec(videoChunk).then((mimeCodec) => {
-  //   console.log(`MIME codec: ${mimeCodec}`);
-  // });
-
   onMount(async () => {
     if (!window.MediaSource) {
       console.error('MediaSource API is not supported in this browser.')
@@ -96,7 +14,7 @@
 
     const video = document.getElementById('videoElement')
     const assetURL =
-      'https://e54a8car3bcq7q8h.public.blob.vercel-storage.com/frag_bunny-ZJaX6ShbMi5ciqThXkW4zyuynptZcT.mp4'
+      'https://e54a8car3bcq7q8h.public.blob.vercel-storage.com/14c24a03-fe3c-46e9-9c60-b3629b7bd407-AJU9Re3SULCQPsu1txSmrreuXcjdy9.mp4'
     // Need to be specific for Blink regarding codecs
     // ./mp4info frag_bunny.mp4 | grep Codec
     var mimeCodec = 'video/mp4; codecs="avc1.42E01E, mp4a.40.2"'
@@ -159,7 +77,7 @@
       xhr.send()
     }
 
-    async function appendSegment(chunk) {
+    function appendSegment(chunk) {
       // await getMimeCodec(chunk).then((mimeCodec) => {
       //   console.log(`MIME codec: ${mimeCodec}`);
       // });
