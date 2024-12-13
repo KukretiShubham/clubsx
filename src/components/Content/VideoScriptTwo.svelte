@@ -41,8 +41,8 @@
 
     mp4boxfile.onReady = function (info) {
       console.log('Movie info:', info)
-      const fullDuration = info.duration / info.timescale;
-      mediaSource.duration = fullDuration;
+      const fullDuration = info.duration / info.timescale
+      mediaSource.duration = fullDuration
 
       // Initialize tracks and segment options
       info.tracks.forEach((track) => {
