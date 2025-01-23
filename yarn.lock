@@ -1472,9 +1472,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@devprotocol/clubs-core@npm:3.23.3":
-  version: 3.23.3
-  resolution: "@devprotocol/clubs-core@npm:3.23.3"
+"@devprotocol/clubs-core@npm:3.23.2":
+  version: 3.23.2
+  resolution: "@devprotocol/clubs-core@npm:3.23.2"
   dependencies:
     "@devprotocol/dev-kit": "npm:8.7.0"
     "@devprotocol/elements": "npm:1.5.3"
@@ -1490,13 +1490,13 @@ __metadata:
     js-base64: "npm:^3.7.2"
     lit: "npm:^3.0.0"
     marked: "npm:^10.0.0"
+    mp4box: "npm:^0.5.3"
     p-queue: "npm:^8.0.1"
     ramda: "npm:^0.30.0"
     react: "npm:^18.0.0"
     react-dom: "npm:^18.0.0"
     rxjs: "npm:^7.8.1"
     svelte: "npm:^5.0.0"
-    video.js: "npm:8.21.0"
     vue: "npm:^3.2.0"
     yaml: "npm:2.6.1"
   peerDependencies:
@@ -1522,7 +1522,7 @@ __metadata:
       optional: true
     vue:
       optional: true
-  checksum: 10c0/1fe216cab60aa2f799d13967289a71a2a39a0ceb5816cbc0a2e17ae3e668261c0932c57b4e0da5931596f1c16265bbea55f6e873e5c46be65dac25cf5d3438f9
+  checksum: 10c0/1f7c191203cbe1a0f9da095fb40992d2cdba59775cfa4cec08b75342e5d5a517beb8de9383da1f29b157b7a2a0fde3c13b20641d25db87f63f75586b6f8ebbcd
   languageName: node
   linkType: hard
 
@@ -9882,7 +9882,7 @@ __metadata:
     "@astrojs/vue": "npm:4.5.3"
     "@crossmint/client-sdk-base": "npm:^1.0.1-alpha.6"
     "@crossmint/client-sdk-react-ui": "npm:^1.0.1-alpha.6"
-    "@devprotocol/clubs-core": "npm:3.23.3"
+    "@devprotocol/clubs-core": "npm:3.23.2"
     "@devprotocol/clubs-plugin-akiba": "npm:0.1.7"
     "@devprotocol/clubs-plugin-awesome-onboarding": "npm:0.5.1"
     "@devprotocol/clubs-plugin-passports": "npm:0.1.0-beta.43"
@@ -9977,6 +9977,7 @@ __metadata:
     type-fest: "npm:4.32.0"
     typescript: "npm:5.5.4"
     uuid: "npm:^10.0.0"
+    video.js: "npm:8.21.0"
     viem: "npm:1.21.4"
     vitest: "npm:^1.0.0"
     vue: "npm:3.5.13"
